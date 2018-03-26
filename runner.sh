@@ -29,6 +29,7 @@ yes '' | gitlab-runner register --url ${gitlab_service_url} \
                                 --docker-volumes /root/m2:/root/.m2 \
                                 --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
                                 --docker-extra-hosts ${GITLAB_HOST}:${GITLAB_IP}
+unset GITLAB_RUNNER_TOKEN
 
 # assign runner token
 token=$(cat /etc/gitlab-runner/config.toml | grep token | awk '{print $3}' | tr -d '"')
