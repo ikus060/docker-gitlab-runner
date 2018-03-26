@@ -24,6 +24,7 @@ yes '' | gitlab-runner register --url ${gitlab_service_url} \
                                 --registration-token ${GITLAB_RUNNER_TOKEN} \
                                 --executor docker \
                                 --name "runner" \
+                                --locked "false" \
                                 --output-limit "20480" \
                                 --docker-image "docker:latest" \
                                 --docker-volumes /root/m2:/root/.m2 \
