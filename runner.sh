@@ -20,17 +20,17 @@ term_handler() {
 trap 'kill ${!}; term_handler' SIGTERM
 
 # register runner
-yes '' | gitlab-runner register --url ${gitlab_service_url} \
-                                --registration-token ${GITLAB_RUNNER_TOKEN} \
-                                --executor docker \
-                                --name "runner" \
-                                --locked "false" \
-                                --output-limit "20480" \
-                                --docker-image "docker:latest" \
-                                --docker-volumes /root/m2:/root/.m2 \
-                                --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
-                                --docker-extra-hosts ${GITLAB_HOST}:${GITLAB_IP} \
-                                ${GITLAB_REGISTER_ARGS}
+gitlab-runner register --non-interactive \
+                       --url ${gitlab_service_url} \
+                       --registration-token ${GITLAB_RUNNER_TOKEN} \
+                       --executor docker \
+                       --name "runner" \
+		       --output-limit "20480" \
+                       --docker-image "docker:latest" \
+                       --docker-volumes /root/m2:/root/.m2 \
+                       --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
+                       --docker-extra-hosts ${GITLAB_HOST}:${GITLAB_IP} \
+		       ${GITLAB_REGISTER_ARGS}
 unset GITLAB_RUNNER_TOKEN
 # Update concurrent value
 sed -i "s/concurrent.*/concurrent = ${GITLAB_CONCURRENT:=1}/" /etc/gitlab-runner/config.toml
