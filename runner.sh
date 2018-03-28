@@ -31,6 +31,8 @@ yes '' | gitlab-runner register --url ${gitlab_service_url} \
                                 --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
                                 --docker-extra-hosts ${GITLAB_HOST}:${GITLAB_IP}
 unset GITLAB_RUNNER_TOKEN
+# Update concurrent value
+sed -i "s/concurrent.*/concurrent = ${GITLAB_CONCURRENT:=1}/" /etc/gitlab-runner/config.toml
 
 # assign runner token
 token=$(cat /etc/gitlab-runner/config.toml | grep token | awk '{print $3}' | tr -d '"')
