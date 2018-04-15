@@ -1,8 +1,7 @@
 FROM gitlab/gitlab-runner
-MAINTAINER Pavol Noha <pavol.noha@gmail.com>
+MAINTAINER Patrik Dufresne <info@patrikdufresne.com>
 
 ADD runner.sh /runner.sh
 RUN chmod +x /runner.sh
 
 ENTRYPOINT ["/runner.sh"]
-
