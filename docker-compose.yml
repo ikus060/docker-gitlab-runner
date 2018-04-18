@@ -5,11 +5,10 @@ services:
   web:
     image: 'gitlab/gitlab-ce:latest'
     restart: always
-    hostname: '${GITLAB_HOST}'
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://${GITLAB_HOST}'
-        pages_external_url 'http://${GITLAB_PAGES}'
+        external_url '${GITLAB_URL}'
+        pages_external_url '${GITLAB_PAGES_URL}'
     ports: 
       - '80:80'
       - '443:443'
@@ -36,7 +35,7 @@ services:
         max_attempts: 3
         
   runner:
-    image: 'ikus060/gitlab-runner'
+    image: 'ikus060/gitlab-runner:latest'
     restart: always
     volumes: 
       - /var/run/docker.sock:/var/run/docker.sock
@@ -45,7 +44,7 @@ services:
     depends_on:
     - "web"
     environment:
-      - GITLAB_HOST=${GITLAB_HOST}
+      - GITLAB_URL=http://web/
       - GITLAB_RUNNER_TOKEN=${GITLAB_RUNNER_TOKEN}
       - REGISTER_LOCKED=false
       - GITLAB_CONCURRENT=4

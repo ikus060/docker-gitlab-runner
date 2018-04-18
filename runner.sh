@@ -3,7 +3,6 @@ set -x
 
 pid=0
 token=()
-gitlab_service_url=http://${GITLAB_HOST}
 
 # SIGTERM-handler
 term_handler() {
@@ -11,26 +10,31 @@ term_handler() {
     kill -SIGTERM "$pid"
     wait "$pid"
   fi
-  gitlab-runner unregister -u ${gitlab_service_url} -t ${token}
+  gitlab-runner unregister -u ${GITLAB_URL} -t ${token}
   exit 143; # 128 + 15 -- SIGTERM
 }
+
+# Wait until gitlab is responding
+until curl -s ${GITLAB_URL}; do
+    sleep 2
+done
+sleep 5
+
+# register runner
+gitlab-runner register --non-interactive \
+                       --url ${GITLAB_URL} \
+                       --registration-token ${GITLAB_RUNNER_TOKEN} \
+                       --executor docker \
+                       --name "runner" \
+                       --output-limit "20480" \
+                       --docker-image "docker:latest" \
+                       --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
+		       ${GITLAB_REGISTER_ARGS}
 
 # setup handlers
 # on callback, kill the last background process, which is `tail -f /dev/null` and execute the specified handler
 trap 'kill ${!}; term_handler' SIGTERM
 
-# register runner
-gitlab-runner register --non-interactive \
-                       --url ${gitlab_service_url} \
-                       --registration-token ${GITLAB_RUNNER_TOKEN} \
-                       --executor docker \
-                       --name "runner" \
-		       --output-limit "20480" \
-                       --docker-image "docker:latest" \
-                       --docker-volumes /root/m2:/root/.m2 \
-                       --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
-                       --docker-extra-hosts ${GITLAB_HOST}:${GITLAB_IP} \
-		       ${GITLAB_REGISTER_ARGS}
 unset GITLAB_RUNNER_TOKEN
 # Update concurrent value
 sed -i "s/concurrent.*/concurrent = ${GITLAB_CONCURRENT:=1}/" /etc/gitlab-runner/config.toml
