@@ -1,0 +1,59 @@
+version: '3.4'
+# https://docs.gitlab.com/omnibus/docker/#install-gitlab-using-docker-compose
+
+services:
+  web:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: always
+    hostname: '${GITLAB_HOST}'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://${GITLAB_HOST}'
+        pages_external_url 'http://${GITLAB_PAGES}'
+    ports: 
+      - '80:80'
+      - '443:443'
+    volumes: 
+      - '/srv/gitlab/config:/etc/gitlab'
+      - '/srv/gitlab/log:/var/log/gitlab'
+      - '/srv/gitlab/data:/var/opt/gitlab'
+    networks:
+    - ci
+    deploy:
+      placement:
+        constraints: [node.role == master]
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: pause
+        order: start-first
+        monitor: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        
+  runner:
+    image: 'ikus060/gitlab-runner'
+    restart: always
+    volumes: 
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+    - ci
+    depends_on:
+    - "web"
+    environment:
+      - GITLAB_HOST=${GITLAB_HOST}
+      - GITLAB_RUNNER_TOKEN=${GITLAB_RUNNER_TOKEN}
+      - REGISTER_LOCKED=false
+      - GITLAB_CONCURRENT=4
+      - GITLAB_REGISTER_ARGS=--docker-volumes /etc/ssl/certs:/etc/ssl/certs:ro --docker-volumes /usr/local/share/ca-certificates/pki:/usr/local/share/ca-certificates/pki:ro
+    deploy: 
+      mode: global
+      placement:
+        constraints: [node.role == worker]
+        
+networks:
+  ci:
