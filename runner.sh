@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -x
+set -e
 
 pid=0
 token=()
@@ -25,7 +26,7 @@ gitlab-runner register --non-interactive \
                        --url ${GITLAB_URL} \
                        --registration-token ${GITLAB_RUNNER_TOKEN} \
                        --executor docker \
-                       --name "runner" \
+                       --name "${GITLAB_RUNNER_NAME:-runner}" \
                        --output-limit "20480" \
                        --docker-image "docker:latest" \
                        --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
