@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -e
-set -x
 
 if [ -z $GITLAB_URL ]; then
     echo "GITLAB_URL is required" 
@@ -18,32 +17,43 @@ until curl -s ${GITLAB_URL}>/dev/null; do
 done
 sleep 5
 
-# register runner only if not configure.
-# when user mount /etc/gitlab-runner, the config may already exists.
-if [ -e /etc/gitlab-runner/config.toml ]; then
-    echo "Re-use existing runner token from /etc/gitlab-runner/config.toml"
-else
-    echo "Register new runner"
-    gitlab-runner register \
-        --non-interactive \
-        --url ${GITLAB_URL} \
-        --registration-token ${GITLAB_RUNNER_TOKEN} \
-        --executor docker \
-        --name "${GITLAB_RUNNER_NAME:-runner}" \
-        --output-limit "20480" \
-        --docker-image "docker:latest" \
-        --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
-        ${GITLAB_REGISTER_ARGS}
-fi
+while true; do
+    # register runner only if not configure.
+    # when user mount /etc/gitlab-runner, the config may already exists.
+    if grep token /etc/gitlab-runner/config.toml > /dev/null; then
+        echo "Re-use existing runner token from /etc/gitlab-runner/config.toml"
+    else
+        echo "Register new runner"
+        gitlab-runner register \
+            --non-interactive \
+            --url ${GITLAB_URL} \
+            --registration-token ${GITLAB_RUNNER_TOKEN} \
+            --executor docker \
+            --name "${GITLAB_RUNNER_NAME:-runner}" \
+            --output-limit "20480" \
+            --docker-image "docker:latest" \
+            --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
+            ${GITLAB_REGISTER_ARGS}
+    fi
 
-# Update concurrent value
-sed -i "s/concurrent.*/concurrent = ${GITLAB_CONCURRENT:=1}/" /etc/gitlab-runner/config.toml
+    # Update concurrent value
+    sed -i "s/concurrent.*/concurrent = ${GITLAB_CONCURRENT:=1}/" /etc/gitlab-runner/config.toml
 
-# run multi-runner
-gitlab-runner start
+    # run multi-runner
+    gitlab-runner start
 
-# wait forever
-while true
-do
-  tail -f /dev/null & wait ${!}
+    # Check status of the runner
+    echo "Check runner status..."
+    while gitlab-runner verify 2>&1
+    do
+      sleep 15
+      echo "Check runner status..."
+    done
+    # Remove config if the runner if not working
+    if ! gitlab-runner verify; then
+        echo "Runner not healty reset registration."
+        rm /etc/gitlab-runner/config.toml
+    fi
+    echo "-----------------------------------------"
+
 done
