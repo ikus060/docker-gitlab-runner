@@ -1,4 +1,4 @@
-FROM gitlab/gitlab-runner:v10.6.0
+FROM gitlab/gitlab-runner:v13.5.0
 MAINTAINER Patrik Dufresne <info@patrikdufresne.com>
 
 ADD runner.sh /runner.sh
