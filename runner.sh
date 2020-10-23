@@ -32,7 +32,6 @@ while true; do
             --name "${GITLAB_RUNNER_NAME:-runner}" \
             --output-limit "20480" \
             --docker-image "docker:latest" \
-            --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
             ${GITLAB_REGISTER_ARGS}
     fi
 
